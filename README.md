@@ -10,7 +10,7 @@ PLEASE **read the code** before asking any questions.
 
 If you can't read the code, this repository is NOT for you.
 
-**ImageTools** and **FontTools**, as well as more documentation, are coming soon!
+**FontTools**, as well as more documentation, are coming soon!
 
 **Generative AI** was used in the creation of this project’s code, comments, documentation, and miscellaneous supporting files.
 
@@ -26,7 +26,7 @@ You can find more details on the TextTools in the dedicated folder.
 ImageTools
 -------------------------------------------------------------------------------
 
-Coming soon!
+You can find more details on the ImageTools in the dedicated folder.
 
 -------------------------------------------------------------------------------
 FontTools
@@ -73,7 +73,7 @@ KEY DEPENDENCIES (summary)
 	  NOTE: The version used in our toolchain(s) is an edited OLD version so it doesn't ask for user input — it simply runs the command and exit.
 			
 
-  • **SRDTool** — ALWAYS required (SRD(V) injection)
+  • **SRDTool** — ALWAYS required (SRD(V) injection) for ImageTools
 	  
 	  SRDTool is from: https://github.com/CaptainSwag101/DRV3-Sharp
       
@@ -87,6 +87,10 @@ KEY DEPENDENCIES (summary)
       
 	  NOTE: The version of StxTool used in our toolchain(s) is an edited OLD version so it doesn't ask for user input — it simply runs the command and exit.
 
+  • **UAFGJ** — ALWAYS required for ImageTools (if you intend to compile for Switch)
+	  
+	  UAFGJ is from: https://github.com/IndacoSub/UABEA/tree/custom
+  
   • **UPS binary** (ups / ups.exe) — required for WhiteSheet
       
 	  Used to generate UPS patches for distribution.
@@ -97,6 +101,7 @@ KEY DEPENDENCIES (summary)
 	  Needed for:
         - Bugvac (C#)
         - LooseFloorboard (C#)
+		- UAFGJ
         - Some STX/SPC tools depending on platform
         - General DGRV3-DAIXTOOLS helper utilities
 
@@ -126,7 +131,7 @@ BUILD & RUN (recommended)
 4) Configure:
    - Edit TextConfig.config / ImageConfig.config / FontConfig.config to set flags
 
-5) Run (HiddenDoor for TextTools, TODO for others)
+5) Run (HiddenDoor for TextTools, Pianist for ImageTools, TODO for others)
 
 To run a single tool instead of the whole toolchain, execute its binary directly (examples provided): `HydraulicPress.exe`, `Electrohammer.exe`, `WhiteSheet.exe part2`
 
@@ -155,7 +160,3 @@ CONTRIBUTING
   • Consider adding tests or sample inputs for any behavioral changes.
   
   • Document any new external dependency in this README.
-
--------------------------------------------------------------------------------
-END
-===============================================================================

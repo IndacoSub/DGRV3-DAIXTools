@@ -4,7 +4,7 @@
 
 This README is the high-level overview for Team DAIX's TextTools from DGRV3-DAIXTOOLS. 
 
-Individual tools (HydraulicPress, Electrohammer, Necronomicon, WhiteSheet, Crossbow, etc.) have their own READMEs and source comments for implementation details (COMING SOON).
+Individual tools have their own READMEs and source comments for implementation details (COMING SOON).
 
 PLEASE **read the code** before asking any questions.
 
@@ -257,7 +257,3 @@ TROUBLESHOOTING & NOTES
 
   • "**UPS files too small**" after WhiteSheet:
       WhiteSheet deletes UPS files smaller than an arbitrary threshold (0x20 bytes). If your UPS tool produces small files, verify the UPS tool invocation and base/modified inputs.
-
--------------------------------------------------------------------------------
-END
-===============================================================================
