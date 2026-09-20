@@ -9,11 +9,12 @@
 // 3. Remove platform tags when they match
 // 4. Skip the entire line when they do not match
 //
-// Used to filter platform‑specific script content during compilation.
+// Used to filter platform-specific script content during compilation.
 
 #pragma once
 
 #include <string>
+#include <vector>
 #include "../Common/Common.h"
 
 namespace Distribution {
@@ -40,64 +41,79 @@ namespace Distribution {
 		// The exact tag for the active platform.
 		// Example: "<PLATFORM_PC>"
 		std::string const current_platform_str = platform_prefix + Distribution::Platform + ">";
+
 		if (!ret.empty() && Common::StringContains(ret, platform_prefix)) {
+
 			// Is it the platform we're trying to compile?
-			std::size_t const platform_we_want = ret.find(current_platform_str);
-			if (platform_we_want != std::string::npos) {
-				std::size_t const just_one_platform = ret.find(platform_prefix, platform_we_want) == std::string::npos;
-				if (just_one_platform) {
-					// Case 1: Only one platform tag exists.
-					// Example: "<PLATFORM_PC>MyString" → "MyString"
-					ret = ret.substr(platform_we_want + current_platform_str.length());
+			std::size_t const first_platform_pos = ret.find(platform_prefix);
+
+			if (first_platform_pos == std::string::npos) {
+				return ret;
+			}
+
+			// Find and process all consecutive platform tags.
+			// Example:
+			//   "<PLATFORM_PC><PLATFORM_SWITCH>Text"
+			//
+			// The entire consecutive platform-tag group belongs to the same line.
+			// The line is valid if at least one of those platforms matches the
+			// currently selected build platform.
+
+			std::size_t cursor = first_platform_pos;
+			std::size_t content_start = std::string::npos;
+			bool found_current_platform = false;
+			bool malformed_platform_tag = false;
+
+			while (cursor != std::string::npos && cursor < ret.length()) {
+
+				// Make sure the current cursor actually points at a platform tag.
+				if (ret.compare(cursor, platform_prefix.length(), platform_prefix) != 0) {
+					break;
+				}
+
+				std::size_t const tag_end = ret.find(">", cursor);
+
+				if (tag_end == std::string::npos) {
+					malformed_platform_tag = true;
+					break;
+				}
+
+				std::string const platform_tag = ret.substr(
+					cursor,
+					tag_end - cursor + 1
+				);
+
+				if (platform_tag == current_platform_str) {
+					found_current_platform = true;
+				}
+
+				cursor = tag_end + 1;
+
+				// The next character is not another platform tag.
+				if (ret.compare(cursor, platform_prefix.length(), platform_prefix) != 0) {
+					content_start = cursor;
+					break;
+				}
+			}
+
+			if (malformed_platform_tag) {
+				// Malformed platform tag: safest behavior is to skip the line.
+				ret = "SKIPTHISLINE";
+			}
+			else if (found_current_platform) {
+				// Remove all consecutive platform tags while preserving any text
+				// before the first platform marker.
+				//
+				// Example:
+				//   "<PLATFORM_PC><PLATFORM_XBOX>V3_BGM_037"
+				// → "V3_BGM_037"
+
+				if (content_start != std::string::npos) {
+					ret = ret.substr(0, first_platform_pos) + ret.substr(content_start);
 				}
 				else {
-					// Case 2: Multiple platform tags exist.
-					// Example:
-					//   "<PLATFORM_PC><PLATFORM_SWITCH><PLATFORM_ANDROID>MyString"
-					// If active platform = PC → remove all other tags.
-					std::vector<std::size_t> platform_positions{};
-					std::size_t last = 0;
-					std::string const bak = ret;
-					// Collect positions of all platform tags except the active one.
-					// These will be removed later.
-
-					for (std::uint64_t j = 0; j < (bak.length() / platform_prefix.length()) + 1; ++j) {
-						last = bak.find(platform_prefix, last);
-						if (last != platform_we_want && last != std::string::npos &&
-							std::find(platform_positions.begin(), platform_positions.end(), last) == platform_positions.end()) {
-							platform_positions.push_back(last);
-						}
-					}
-
-					if (!platform_positions.empty()) {
-						// Fixed: missing while
-
-						// Strip platform tags from the left until only the active one remains.
-						// Example:
-						//   "<PLATFORM_PC><PLATFORM_SWITCH>MyString"
-						// → "<PLATFORM_PC>MyString"
-						// → "MyString"
-
-						do {
-							std::size_t const rightmost_end = bak.find(">");
-							if (rightmost_end != std::string::npos) {
-								// Ex. <PLATFORM_ANDROID>MyString
-								// becomes MyString
-								ret = bak.substr(rightmost_end + 1);
-							}
-							else {
-								// Cannot make example
-								ret = bak.substr(platform_we_want + current_platform_str.length());
-								break;
-							}
-						} while (ret.starts_with("<PLATFORM_"));
-					}
-					else {
-						// ??? (Cannot make example)
-						// Fallback: if tag parsing fails, remove the active tag and return the remainder.
-
-						ret = bak.substr(platform_we_want + current_platform_str.length());
-					}
+					// Fallback: if tag parsing fails, remove the active tag and return the remainder.
+					ret = ret.substr(first_platform_pos + current_platform_str.length());
 				}
 			}
 			else {

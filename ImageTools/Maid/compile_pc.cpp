@@ -263,12 +263,18 @@ namespace PC {
 			// Get texture SRD(V) filename which is constant in most cases
 			std::string const& default_texture_srd = EncryptString("texture.srd");
 			std::string const& default_texture_srdv = EncryptString("texture.srdv");
+			std::string const& default_texture_sfl = EncryptString("flash.sfl");
 
 			// Copy it in a new variable, some textures don't have texture.srd but a custom .srd name
 			// which is not the default one
 			// (no const)
 			auto texture_srd = default_texture_srd;
 			auto texture_srdv = default_texture_srdv;
+			std::string texture_sfl = std::filesystem::path(fold / default_texture_sfl).string();
+
+			if (!std::filesystem::exists(texture_sfl)) {
+				texture_sfl = "";
+			}
 
 			// If "texture.srd" is not found, it means that
 			// A) there is no .srd at all
@@ -484,6 +490,7 @@ namespace PC {
 			fs.SRD_Filename = (fold / texture_srd).string();
 			fs.SRDV_Filename = (fold / texture_srdv).string();
 			fs.SPC_Filename = fspc;
+			fs.SFL_Filename = texture_sfl;
 			fs_vec.push_back(fs);
 
 			std::string const fspc_raw_low = fspc;
@@ -633,6 +640,13 @@ namespace PC {
 				// Use SpcTool to insert the .srdv in the .spc
 				CalculateSpc(en.SRDV_Filename, current_dir, en.SPC_Filename);
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+				std::string const sflname = en.SFL_Filename;
+				if (!sflname.empty()) {
+					// If flash.sfl is present in the folder with the texture.srd and .srdv, insert it into the SPC as well
+					CalculateSpc(en.SFL_Filename, current_dir, en.SPC_Filename);
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				}
 
 				local_inserted_srds.push_back(srdname);
 			}
@@ -933,7 +947,7 @@ namespace PC {
 		}
 	}
 
-	void CalculateSpc(std::string const& srd, std::filesystem::path const& program, std::string const& file_to_insert) {
+	void CalculateSpc(std::string const& srd, std::filesystem::path const& program, std::string const& spc_file) {
 
 		if (srd.empty()) {
 			return;
@@ -949,9 +963,9 @@ namespace PC {
 
 		//std::cout << "In " << file_to_insert << ":" << std::endl;
 #ifdef _WIN32
-		std::string const spc_command = "\"" + spctool_path.string() + "\" \"" + file_to_insert + EncryptString("\" insert \"") + srd + "\"";
+		std::string const spc_command = "\"" + spctool_path.string() + "\" \"" + spc_file + EncryptString("\" insert \"") + srd + "\"";
 #else
-		std::string const spc_command = spctool_path.string() + " \"" + file_to_insert + EncryptString("\" insert \"") + srd + "\"";
+		std::string const spc_command = spctool_path.string() + " \"" + spc_file + EncryptString("\" insert \"") + srd + "\"";
 #endif
 		//std::cout << "SPC Command: " << spc_command << std::endl;
 		if (Common::executeBatch(spc_command.c_str()) != 0) {

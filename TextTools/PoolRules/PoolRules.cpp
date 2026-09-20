@@ -7,17 +7,17 @@
 // 1. Compare every translated .txt file against its English equivalent
 // 2. Count translated vs untranslated lines
 // 3. Count translated vs untranslated characters
-// 4. Compute per‑file, per‑chapter, and whole‑game translation percentages
+// 4. Compute per-file, per-chapter, and whole-game translation percentages
 // 5. Detect line mismatches between TR and EN versions
 // 6. Produce detailed reports (percentage_res.txt, charcount_res.txt, detailed_charcount_rex.txt)
 //
 // How PoolRules differs from MarkerStone:
 // - MarkerStone only checks **line counts** (TR vs EN) and reports mismatches.
 // - PoolRules performs **full translation analysis**, including:
-//      • per‑line translation detection  
-//      • per‑character translation ratio  
-//      • per‑chapter aggregation  
-//      • whole‑game completion percentage  
+//      • per-line translation detection  
+//      • per-character translation ratio  
+//      • per-chapter aggregation  
+//      • whole-game completion percentage  
 //      • detailed breakdowns for every file  
 // - MarkerStone is a *sanity checker*.
 // - PoolRules is a *translation progress analyzer*.
@@ -53,9 +53,9 @@ using ConvertedType = RatioType;
 // - translated vs untranslated lines
 // - translated vs untranslated characters
 // - total lines
-// - per‑file translation percentage
-// - per‑file character ratio
-// - line‑count consistency check
+// - per-file translation percentage
+// - per-file character ratio
+// - line-count consistency check
 
 class FileEntry {
 public:
@@ -74,7 +74,7 @@ public:
 };
 
 // Aggregates FileEntry data for an entire chapter/folder.
-// Computes chapter‑level totals and percentages.
+// Computes chapter-level totals and percentages.
 
 class ChapterEntry {
 public:
@@ -92,7 +92,7 @@ public:
 	virtual compl ChapterEntry() = default;
 };
 
-// Aggregates ChapterEntry data for the entire game.
+// Aggregates FileEntry data for the entire game.
 // Computes global translation progress and character ratios.
 
 class GameEntry {
@@ -163,7 +163,7 @@ bool CalculatePercentages(std::filesystem::path const& translated, std::filesyst
 		"test"
 	};
 
-	// Specific files used to verify line‑matching reliability.
+	// Specific files used to verify line-matching reliability.
 	// PoolRules prints detailed line/character dumps for these.
 
 	std::vector<std::string> test_files{};
@@ -231,8 +231,25 @@ bool CalculatePercentages(std::filesystem::path const& translated, std::filesyst
 
 			// Vector containing ALL the strings in the file
 			std::vector<std::string> definitely_optimized_vec{};
+
+			// Lines used to determine whether the file is actually empty or only contains
+			// the standard opening/closing brackets.
+			std::vector<std::string> raw_nonempty_lines{};
+
 			// Read every single string in the file
 			while (std::getline(my_input_file, temp)) {
+
+				temp = std::regex_replace(temp, std::regex("\r"), "");
+				temp = std::regex_replace(temp, std::regex("\n"), "");
+
+				std::string trimmed_temp = temp;
+				std::size_t const first_non_space = trimmed_temp.find_first_not_of(" \t");
+				if (first_non_space != std::string::npos) {
+					std::size_t const last_non_space = trimmed_temp.find_last_not_of(" \t");
+					trimmed_temp = trimmed_temp.substr(first_non_space, last_non_space - first_non_space + 1);
+					raw_nonempty_lines.push_back(trimmed_temp);
+				}
+
 				if (!temp.empty() && temp.front() == '{' || temp.front() == '}') {
 					// Ignore brackets
 					continue;
@@ -240,8 +257,7 @@ bool CalculatePercentages(std::filesystem::path const& translated, std::filesyst
 				if (!temp.empty() && temp.front() == '\n' || temp.front() == '\r') {
 					continue;
 				}
-				temp = std::regex_replace(temp, std::regex("\r"), "");
-				temp = std::regex_replace(temp, std::regex("\n"), "");
+
 				// Add the string to the file
 				definitely_optimized_vec.push_back(temp);
 				// Increase the number of translated characters in the file
@@ -253,6 +269,29 @@ bool CalculatePercentages(std::filesystem::path const& translated, std::filesyst
 
 			// Close the file
 			my_input_file.close();
+
+			// Delete files which are empty after platform filtering or which only contain the standard brackets.
+			bool const only_standard_brackets =
+				raw_nonempty_lines.size() == 2 &&
+				raw_nonempty_lines[0] == "{" &&
+				raw_nonempty_lines[1] == "}";
+
+			if (raw_nonempty_lines.empty() || only_standard_brackets) {
+				std::error_code remove_error;
+				bool const removed = std::filesystem::remove(file.path(), remove_error);
+
+				if (removed) {
+					LOG("Deleted empty/platform-excluded file: " + file.path().string(), HERE, "PoolRules");
+				}
+				else if (remove_error) {
+					LOG("ERROR: Couldn't delete empty/platform-excluded file: " + file.path().string() + ": " + remove_error.message(), HERE, "PoolRules");
+				}
+				else {
+					LOG("WARNING: File was empty/platform-excluded but couldn't be deleted: " + file.path().string(), HERE, "PoolRules");
+				}
+
+				continue;
+			}
 
 			temp.clear();
 
@@ -339,7 +378,7 @@ bool CalculatePercentages(std::filesystem::path const& translated, std::filesyst
 					my_file_entry.f_characters_percentage = 100.0;
 				}
 				else {
-					my_file_entry.f_characters_percentage = 
+					my_file_entry.f_characters_percentage =
 						static_cast<RatioType>((static_cast<RatioType>(my_file_entry.f_total_characters_tr)) / (static_cast<RatioType>(my_file_entry.f_total_characters_utr)));
 					my_file_entry.f_characters_percentage *= 100.0;
 				}

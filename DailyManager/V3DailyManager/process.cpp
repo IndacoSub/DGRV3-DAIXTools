@@ -116,7 +116,7 @@ namespace Process {
 	//   1. Determine which TextTools config folder to use
 	//      - PC: ForDaily / ForDailyPrivate / TextInjector / TextRandomizer
 	//      - Switch: TextInjectorForSwitch
-	//      - Xbox: unsupported (returns false)
+	//      - Xbox: TextInjectorForXbox
 	//
 	//   2. Extract Tools.7z (or Tools_Linux.7z) into the working directory
 	//   3. Copy the selected config folder into the working directory
@@ -149,8 +149,6 @@ namespace Process {
 				break;
 			case Platform::Xbox:
 				ConfigPath = "TextInjectorForXbox";
-				std::cout << "Xbox text not supported" << std::endl;
-				return false;	// Xbox not supported, for now
 				break;
 			default:
 				return false;
@@ -232,7 +230,7 @@ namespace Process {
 	//   1. Determine which ImageTools config folder to use
 	//      - PC: ImageInjector
 	//      - Switch: ImageInjectorForSwitch
-	//      - Xbox: unsupported (returns false)
+	//      - Xbox: ImageInjectorForXbox
 	//
 	//   2. Extract Tools.7z (or Tools_Linux.7z)
 	//   3. Copy the selected config folder
@@ -258,8 +256,6 @@ namespace Process {
 				break;
 			case Platform::Xbox:
 				ConfigPath = "ImageInjectorForXbox";
-				std::cout << "Xbox images not supported" << std::endl;
-				return false;	// Xbox not supported, for now
 				break;
 			default:
 				return false;
@@ -333,8 +329,8 @@ namespace Process {
 	// Launches the FontTools pipeline (Monokuma) for the selected platform.
 	//
 	// Notes:
-	//   • Only PC is supported.
-	//   • Switch and Xbox are explicitly unsupported.
+	//   • Only PC and Xbox are supported.
+	//   • Switch is explicitly unsupported.
 	//   • ConfigPath is optional; DAILY normally runs FontTools without a config.
 	//
 	// Steps:
@@ -357,9 +353,8 @@ namespace Process {
 				//ConfigPath = "FontTools";
 				break;
 			case Platform::Xbox:
-				std::cout << "Xbox version unsupported" << std::endl;
-				// Xbox version unsupported, for now
-				return false;
+				//ConfigPath = "FontTools";
+				break;
 			case Platform::Switch:
 			default:
 				std::cout << "Font tools incompatible" << std::endl;

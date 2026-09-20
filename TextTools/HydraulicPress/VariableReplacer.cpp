@@ -30,6 +30,7 @@
 
 using SuperVarEntry = std::tuple<std::string, std::string, std::string, std::string, std::string>;
 
+
 // Removes SIGNAL_* tags from a line.
 // Special rule: SIGNAL_OE is non‑terminal (only the tag is removed).
 // All other SIGNAL_* tags are terminal: remove tag + everything after it.
@@ -113,7 +114,7 @@ bool VariableUtils::VarExists(std::vector<VarEntry> const& variable_list, std::s
 // Checks whether *all* VAR_* tokens in a sentence exist in the variable list.
 // Used for recursive replacement: continue replacing until no unknown VAR_* remain.
 
-bool VariableUtils::AllVarsExist(std::vector<VarEntry> const& variable_list, std::string const& sentence){
+bool VariableUtils::AllVarsExist(std::vector<VarEntry> const& variable_list, std::string const& sentence) {
 
 	if (!Common::StringContains(sentence, "VAR_")) {
 		return true;
@@ -262,6 +263,7 @@ void VariableUtils::ReplaceVariables(std::vector<std::string> const& files_to_se
 
 				std::string last_cout = "";
 				std::uint64_t count_same = 0;
+				std::uint64_t recursion_iterations = 0;
 				bool cond = false;
 
 				// Recursive variable replacement:
@@ -272,6 +274,11 @@ void VariableUtils::ReplaceVariables(std::vector<std::string> const& files_to_se
 				// Hard limit: 1000 iterations to avoid infinite loops.
 
 				do {
+					++recursion_iterations;
+					if (recursion_iterations > 1000) {
+						break;
+					}
+
 					// Do while is for "recursive variable replacing" (February 2024)
 					for (auto i : variable_list) {
 						// If it's found
@@ -301,21 +308,40 @@ void VariableUtils::ReplaceVariables(std::vector<std::string> const& files_to_se
 						bool const is_make = Common::StringContains(i.first, "MAKE_") && Common::StringContains(x, "MAKE_") && Common::StringContains(x, "(") && Common::StringContains(x, ")");
 						if (is_make) {
 							//std::cout << "Is make: " << x << " with i.first being \"" << i.first << "\"" << std::endl;
-							std::size_t const find_make = x.find("MAKE_");
-							if (find_make != std::string::npos) {
-								std::size_t const find_bracket = x.find("(", find_make);
-								if (find_bracket != std::string::npos) {
-									std::string substr = x.substr(find_bracket + 1);
-									std::size_t const end_bracket = substr.find(")"); // No second arg is correct
-									if (end_bracket != std::string::npos) {
-										substr = substr.substr(0, end_bracket);
-										i.first = std::regex_replace(i.first, std::regex("MY_ARG"), substr);
-										i.second = std::regex_replace(i.second, std::regex("MY_ARG"), substr);
+							std::size_t const template_open = i.first.find('(');
+							std::size_t const my_arg = i.first.find("MY_ARG", template_open == std::string::npos ? 0 : template_open + 1);
+							if (template_open != std::string::npos && my_arg != std::string::npos && my_arg > template_open) {
+								std::string const make_name = i.first.substr(0, template_open);
+								std::size_t const find_make = x.find(make_name);
+								if (find_make != std::string::npos && find_make + make_name.size() < x.size() && x[find_make + make_name.size()] == '(') {
+									std::size_t const find_bracket = find_make + make_name.size();
+									std::size_t end_bracket = find_bracket + 1;
+									std::uint64_t bracket_depth = 1;
+
+									for (; end_bracket < x.size(); end_bracket++) {
+										if (x[end_bracket] == '(') {
+											bracket_depth++;
+										}
+										else if (x[end_bracket] == ')') {
+											bracket_depth--;
+											if (bracket_depth == 0) {
+												break;
+											}
+										}
+									}
+
+									if (end_bracket < x.size() && bracket_depth == 0) {
+										std::string const substr = x.substr(find_bracket + 1, end_bracket - find_bracket - 1);
+										std::string const make_key = std::regex_replace(i.first, std::regex("MY_ARG"), substr);
+										std::string const make_value = std::regex_replace(i.second, std::regex("MY_ARG"), substr);
 										//std::cout << x << " --> \"" << i.first << "\" will become \"" << i.second << "\" (substr: " << substr << ")" << std::endl;
 
-										x = StringUtils::ReplaceSubstring(x, i.first, i.second);
+										x = StringUtils::ReplaceSubstring(x, make_key, make_value);
 									}
 								}
+							}
+							else {
+								LOG("Wat. MAKE was not good", HERE, "HydraulicPress");
 							}
 						}
 						else {
@@ -413,8 +439,15 @@ void VariableUtils::ReplaceVariables(std::vector<std::string> const& files_to_se
 		auto outfile = std::filesystem::path(files_to_search.at(ftp));
 		LOG("Saving " + outfile.string(), HERE, "HydraulicPress");
 		std::ofstream out(outfile, std::ios::out | std::ios::binary);
+		if (!out.is_open()) {
+			LOG("ERROR: Couldn't open the output file: " + outfile.string(), HERE, "HydraulicPress");
+			continue;
+		}
 		out << ss.str();
 		out.flush();
+		if (!out.good()) {
+			LOG("ERROR: Couldn't write the output file: " + outfile.string(), HERE, "HydraulicPress");
+		}
 		out.close();
 
 		std::ofstream out_sve("var_replace_map.txt", std::ios::out | std::ios::app);

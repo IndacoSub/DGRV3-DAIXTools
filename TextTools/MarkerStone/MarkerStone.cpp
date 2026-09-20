@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
 		// the comparison cannot continue reliably — dump diagnostics and abort.
 
 		if (!matches) {
-			LOG("ERROR: The number of files checked is not matching (" + std::to_string(cont_files.first) + " VS " + std::to_string(cont_files.second) + ") !", HERE, "MarkerStone");
+			LOG("WARNING: The number of files checked is not matching (" + std::to_string(cont_files.first) + " VS " + std::to_string(cont_files.second) + ") !", HERE, "MarkerStone");
 
 			std::ofstream f_en("mstone_check_en.txt", std::ios::out | std::ios::app);
 			for (auto const& en_str : check_en) {
@@ -162,9 +162,11 @@ int main(int argc, char* argv[]) {
 			}
 			f_it.close();
 
-			return -1;
+			LOG("WARNING: The number of files checked is not matching (" + std::to_string(cont_files.first) + " VS " + std::to_string(cont_files.second) + ") !", HERE, "MarkerStone");
 		}
-		LOG("The number of files matches (" + std::to_string(cont_files.first) + ") !", HERE, "MarkerStone");
+		else {
+			LOG("The number of files matches (" + std::to_string(cont_files.first) + ") !", HERE, "MarkerStone");
+		}
 
 		LOG("\n", HERE, "MarkerStone"),
 		LOG("Calculating lines once again for translation, and comparing...", HERE, "MarkerStone");

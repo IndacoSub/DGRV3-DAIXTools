@@ -143,7 +143,7 @@ namespace PC {
 
 	void HandleAltFiles(std::filesystem::path const& dgrv3path);
 	void CalculateSrd(std::filesystem::path const& srdtool_loc, std::string const& png, std::string const& srd);
-	void CalculateSpc(std::string const& srd, std::filesystem::path const& program, std::string const& file_to_insert);
+	void CalculateSpc(std::string const& srd, std::filesystem::path const& program, std::string const& spc_file);
 	void DeleteUnchanged(std::filesystem::path const& dgrv3path, std::vector<std::string> const& changed_files);
 	void CompileImages(std::vector<Common::FileStructure> const& fs_vec, std::vector<std::string> const& spc_list, std::vector<std::string> const& srd_list,
 		std::filesystem::path const& where, std::filesystem::path const& dgrv3path);

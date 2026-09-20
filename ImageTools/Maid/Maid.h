@@ -64,6 +64,9 @@ namespace Common {
 		// (PC/Xbox only)
 		// The final SPC archive that will receive the SRD/SRDV pair.
 		std::string SPC_Filename{};
+		// (PC/Xbox only)
+		// The animation file
+		std::string SFL_Filename{};
 
 		FileStructure() = default;
 		virtual compl FileStructure() = default;

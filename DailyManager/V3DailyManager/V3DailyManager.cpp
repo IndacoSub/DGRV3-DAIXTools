@@ -745,7 +745,7 @@ void Start(int argc, char** argv) {
 	std::cout << "Processing took " << process_min_n << " minutes " << " and " << process_sec_n << " seconds!" << std::endl;
 	std::cout << "Uploading took " << upload_min_n << " minutes " << " and " << upload_sec_n << " seconds!" << std::endl;
 	std::cout << std::endl;
-	std::cout << "Done :)" << std::endl;No,
+	std::cout << "Done :)" << std::endl;
 
 	if (fsys::exists(autov3)) {
 		fsys::remove(autov3);

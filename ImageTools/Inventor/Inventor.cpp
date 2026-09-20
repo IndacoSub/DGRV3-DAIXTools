@@ -203,6 +203,12 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	// PLATFORM-SPECIFIC FILES
+
+	if (Configuration::ConfigMap["UseXboxConfiguration"]) {
+		Extract((where / "xbox.7z").string(), where.parent_path(), where);
+	}
+
 	Common::WaitExit();
 }
 
